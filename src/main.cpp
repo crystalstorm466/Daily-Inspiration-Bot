@@ -148,7 +148,7 @@ void on_ready_handler(dpp::cluster &bot, const dpp::ready_t &event) {
     
     global_bosma_scheduler = &main_scheduler;
 
-    global_bosma_scheduler->cron("0 7 * * *", [&bot]() {
+    global_bosma_scheduler->cron("0 12 * * *", [&bot]() {
       get_image(bot);
     });
     }
