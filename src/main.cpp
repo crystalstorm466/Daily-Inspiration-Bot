@@ -12,7 +12,10 @@
 static std::string BOT_TOKEN = std::getenv("DAILY_BOT_TOKEN");
 const dpp::snowflake GENERAL_CHANNEL_ID = 870806579769905192;
 const dpp::snowflake MONKI_CHANNEL_ID = 1393055197818916864;
+const dpp::snowflake LUNCH_CHANNEL_ID = 1393059918499676220;
 static std::string INSPIROBOT_API;
+
+const  std::vector<dpp::snowflake> CHANNEL_IDS = {GENERAL_CHANNEL_ID, MONKI_CHANNEL_ID, LUNCH_CHANNEL_ID};
 
 Bosma::Scheduler* global_bosma_scheduler = nullptr; //initialize
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
@@ -110,14 +113,13 @@ void get_image(dpp::cluster& bot) {
                         std::cout << "Image downloaded successfully to inspirobot_image.png" << std::endl;
                         outputFile.close();
                         // --- STEP 3: Send the downloaded image to Discord ---
-                        dpp::message downloaded_msg(GENERAL_CHANNEL_ID, "Daily Inspiration");
-                        downloaded_msg.add_file("inspirobot_image.jpg", dpp::utility::read_file("inspirobot_image.jpg"));
-                        bot.message_create(downloaded_msg);
-
-                        dpp::message downloaded_msg_two(MONKI_CHANNEL_ID,"Daily Inspiration");
-                        downloaded_msg_two.add_file("inspirobot_image.jpg", dpp::utility::read_file("inspirobot_image.jpg"));
-                        bot.message_create(downloaded_msg_two);
-
+                        //
+                        for (int i = 0; i < CHANNEL_IDS.size(); i++ ) {
+                          dpp::message downloaded_msg(CHANNEL_IDS[i], "Daily Inspiration");
+                          downloaded_msg.add_file("inspirobot_image.jpg", dpp::utility::read_file("inspirobot_image.jpg"));
+                          bot.message_create(downloaded_msg);
+                        }
+                       
                     }
                     outputFile.close();
                 }
@@ -138,19 +140,16 @@ void get_image(dpp::cluster& bot) {
 void on_ready_handler(dpp::cluster &bot, const dpp::ready_t &event) {
     // This function is called when the bot is ready
     std::cout << "Bot is ready! Logged in as " << bot.me.username << std::endl;
-     dpp::message msg (GENERAL_CHANNEL_ID, "Bot is online. Daily Inspirationis scheduled");
-    dpp::message msg_two (MONKI_CHANNEL_ID, "Bot is online. Daily Inspiration is scheduled");
-    dpp::message msg_three(GENERAL_CHANNEL_ID, "Bot is online. Sending one Daily Inspiration");
-    dpp::message msg_four(MONKI_CHANNEL_ID, "Bot is online. Sending one Daily Inspiration");
-         // msg.add_file("daily.jpg", dpp::utility::read_file("daily.jpg"));
-    bot.message_create(msg);
-    bot.message_create(msg_two);
-    get_image(bot);
+    for (int i = 0; i < CHANNEL_IDS.size(); i++) {
+      
 
-    bot.message_create(msg_three);
-    bot.message_create(msg_four);
+     dpp::message msg (CHANNEL_IDS[i], "Bot is online. Daily Inspirationis scheduled");
+     bot.message_create(msg);
+     
+    }
+        get_image(bot);
 
-    // Optionally, you can send a message to a specific channel
+       // Optionally, you can send a message to a specific channel
    // dpp::message msg (GENERAL_CHANNEL_ID, "");
    // msg.add_file("ben.jpg", dpp::utility::read_file("ben.jpg"));
 
