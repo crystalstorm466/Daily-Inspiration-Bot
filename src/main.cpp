@@ -140,8 +140,8 @@ void on_ready_handler(dpp::cluster &bot, const dpp::ready_t &event) {
     std::cout << "Bot is ready! Logged in as " << bot.me.username << std::endl;
      dpp::message msg (GENERAL_CHANNEL_ID, "Bot is online. Daily Inspirationis scheduled");
     dpp::message msg_two (MONKI_CHANNEL_ID, "Bot is online. Daily Inspiration is scheduled");
-    dpp::message msg_three(GENERAL_CHANNEL_ID, "Bot is online. Sending one Daily Inspiration")
-    dpp::message msg_four(MONKI_CHANNEL_ID, "Bot is online. Sending one Daily Inspiration")
+    dpp::message msg_three(GENERAL_CHANNEL_ID, "Bot is online. Sending one Daily Inspiration");
+    dpp::message msg_four(MONKI_CHANNEL_ID, "Bot is online. Sending one Daily Inspiration");
          // msg.add_file("daily.jpg", dpp::utility::read_file("daily.jpg"));
     bot.message_create(msg);
     bot.message_create(msg_two);
