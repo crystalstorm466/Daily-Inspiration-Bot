@@ -13,10 +13,13 @@ static std::string BOT_TOKEN = std::getenv("DAILY_BOT_TOKEN");
 const dpp::snowflake GENERAL_CHANNEL_ID = 870806579769905192;
 const dpp::snowflake MONKI_CHANNEL_ID = 1393055197818916864;
 const dpp::snowflake LUNCH_CHANNEL_ID = 1393059918499676220;
+const dpp::snowflake DEV_CHANNEL_ID = 316679216881991682;
+
+static bool AlreadyScheduled;
 static std::string INSPIROBOT_API;
 
 const  std::vector<dpp::snowflake> CHANNEL_IDS = {GENERAL_CHANNEL_ID, MONKI_CHANNEL_ID, LUNCH_CHANNEL_ID};
-
+//const std::vector<dpp::snowflake> CHANNEL_IDS = {MONKI_CHANNEL_ID, DEV_CHANNEL_ID};
 Bosma::Scheduler* global_bosma_scheduler = nullptr; //initialize
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
     ((std::string*)userp)->append((char*)contents, size * nmemb);
@@ -152,24 +155,32 @@ void on_ready_handler(dpp::cluster &bot, const dpp::ready_t &event) {
        // Optionally, you can send a message to a specific channel
    // dpp::message msg (GENERAL_CHANNEL_ID, "");
    // msg.add_file("ben.jpg", dpp::utility::read_file("ben.jpg"));
-
+  if (!AlreadyScheduled) {
     static Bosma::Scheduler main_scheduler(12);
     auto scheduler_error_callback = [](const std::exception &e) {
       std::cerr << "Bosma scheduler error: " << e.what() << std::endl;
     };
 
-    
     global_bosma_scheduler = &main_scheduler;
 
     global_bosma_scheduler->cron("0 12 * * *", [&bot]() {
       get_image(bot);
     });
+    AlreadyScheduled = true;
+
+  } else {
+    //.... continue
+
+  }
+
+
     }
 int main() {
     if (BOT_TOKEN.empty()) {
         std::cerr << "Error: BOT_TOKEN environment variable is not set." << std::endl;
         return EXIT_FAILURE;
     }
+     bool AlreadyScheduled = false;
      dpp::cluster bot(BOT_TOKEN, dpp::i_default_intents | dpp::i_message_content);
   bot.on_log(dpp::utility::cout_logger());
 
