@@ -180,7 +180,7 @@ int main() {
         std::cerr << "Error: BOT_TOKEN environment variable is not set." << std::endl;
         return EXIT_FAILURE;
     }
-     bool AlreadyScheduled = false;
+     AlreadyScheduled = false;
      dpp::cluster bot(BOT_TOKEN, dpp::i_default_intents | dpp::i_message_content);
   bot.on_log(dpp::utility::cout_logger());
 
