@@ -41,7 +41,7 @@ size_t WriteImageCallback(void* contents, size_t size, size_t nmemb, void* userp
   return total_bytes;
 }
 
-void get_image(dpp::cluster& bot) {
+void get_image(dpp::cluster& bot, bool isTest) {
   std::cout << "Attempting to fetch and send daily Inspirobot image..." << std::endl;
     CURL *curl;
     CURLcode res;
@@ -118,6 +118,12 @@ void get_image(dpp::cluster& bot) {
                         // --- STEP 3: Send the downloaded image to Discord ---
                         //
                         for (int i = 0; i < CHANNEL_IDS.size(); i++ ) {
+                          if (isTest) {
+                            dpp::message downloaded_msg(CHANNEL_IDS[i], "Testing Daily Inspiration");
+                            downloaded_msg.add_file("inspirobot_image.jpg", dpp::utility::read_file("inspirobot_image.jpg"));
+                            bot.message_create(downloaded_msg);
+                            continue;
+                          }
                           dpp::message downloaded_msg(CHANNEL_IDS[i], "Daily Inspiration");
                           downloaded_msg.add_file("inspirobot_image.jpg", dpp::utility::read_file("inspirobot_image.jpg"));
                           bot.message_create(downloaded_msg);
@@ -146,11 +152,11 @@ void on_ready_handler(dpp::cluster &bot, const dpp::ready_t &event) {
     for (int i = 0; i < CHANNEL_IDS.size(); i++) {
       
 
-     dpp::message msg (CHANNEL_IDS[i], "Bot is online. Daily Inspirationis scheduled");
+     dpp::message msg (CHANNEL_IDS[i], "Bot is online. Daily Inspiration is scheduled");
      bot.message_create(msg);
      
     }
-        get_image(bot);
+        get_image(bot, true);
 
        // Optionally, you can send a message to a specific channel
    // dpp::message msg (GENERAL_CHANNEL_ID, "");
@@ -164,7 +170,7 @@ void on_ready_handler(dpp::cluster &bot, const dpp::ready_t &event) {
     global_bosma_scheduler = &main_scheduler;
 
     global_bosma_scheduler->cron("0 12 * * *", [&bot]() {
-      get_image(bot);
+      get_image(bot, false);
     });
     AlreadyScheduled = true;
 
@@ -190,7 +196,7 @@ int main() {
   });
   bot.on_message_create([&bot](const dpp::message_create_t& event) {
       if (event.msg.content == "!test_daily") {
-      get_image(bot);
+      get_image(bot, true);
       event.reply("Testing the bot...");
       }
       });
