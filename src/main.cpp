@@ -41,7 +41,7 @@ size_t WriteImageCallback(void* contents, size_t size, size_t nmemb, void* userp
   return total_bytes;
 }
 
-void get_image(dpp::cluster& bot, bool isTest) {
+void get_image(dpp::cluster& bot, bool isTest, dpp::snowflake channel_id) {
   std::cout << "Attempting to fetch and send daily Inspirobot image..." << std::endl;
     CURL *curl;
     CURLcode res;
@@ -117,17 +117,18 @@ void get_image(dpp::cluster& bot, bool isTest) {
                         outputFile.close();
                         // --- STEP 3: Send the downloaded image to Discord ---
                         //
-                        for (int i = 0; i < CHANNEL_IDS.size(); i++ ) {
-                          if (isTest) {
-                            dpp::message downloaded_msg(CHANNEL_IDS[i], "Testing Daily Inspiration");
+                        //
+                            if (isTest) {
+
+                            dpp::message downloaded_msg(channel_id, "Testing Daily Inspiration");
                             downloaded_msg.add_file("inspirobot_image.jpg", dpp::utility::read_file("inspirobot_image.jpg"));
                             bot.message_create(downloaded_msg);
-                            continue;
+                            
                           }
-                          dpp::message downloaded_msg(CHANNEL_IDS[i], "Daily Inspiration");
+                          dpp::message downloaded_msg(channel_id, "Daily Inspiration");
                           downloaded_msg.add_file("inspirobot_image.jpg", dpp::utility::read_file("inspirobot_image.jpg"));
                           bot.message_create(downloaded_msg);
-                        }
+                        
                        
                     }
                     outputFile.close();
@@ -154,10 +155,9 @@ void on_ready_handler(dpp::cluster &bot, const dpp::ready_t &event) {
 
      dpp::message msg (CHANNEL_IDS[i], "Bot is online. Daily Inspiration is scheduled");
      bot.message_create(msg);
-     
+     get_image(bot, true, CHANNEL_IDS[i]);
     }
-        get_image(bot, true);
-
+        
        // Optionally, you can send a message to a specific channel
    // dpp::message msg (GENERAL_CHANNEL_ID, "");
    // msg.add_file("ben.jpg", dpp::utility::read_file("ben.jpg"));
@@ -170,8 +170,11 @@ void on_ready_handler(dpp::cluster &bot, const dpp::ready_t &event) {
     global_bosma_scheduler = &main_scheduler;
 
     global_bosma_scheduler->cron("0 12 * * *", [&bot]() {
-      get_image(bot, false);
-    });
+        for (int i = 0; i < CHANNEL_IDS.size(); i++ ) {
+        get_image(bot, false, CHANNEL_IDS[i]);
+        }
+        
+        });
     AlreadyScheduled = true;
 
   } else {
