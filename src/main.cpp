@@ -18,7 +18,8 @@ const dpp::snowflake DEV_CHANNEL_ID = 316679216881991682;
 static bool AlreadyScheduled;
 static std::string INSPIROBOT_API;
 
-const  std::vector<dpp::snowflake> CHANNEL_IDS = {GENERAL_CHANNEL_ID, MONKI_CHANNEL_ID, LUNCH_CHANNEL_ID};
+//static  std::vector<dpp::snowflake> CHANNEL_IDS = {GENERAL_CHANNEL_ID, MONKI_CHANNEL_ID, LUNCH_CHANNEL_ID};
+static std::vector<dpp::snowflake> CHANNEL_IDS = { 0 };
 //const std::vector<dpp::snowflake> CHANNEL_IDS = {MONKI_CHANNEL_ID, DEV_CHANNEL_ID};
 Bosma::Scheduler* global_bosma_scheduler = nullptr; //initialize
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
@@ -26,6 +27,100 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
     return size * nmemb;
 }
 
+void readFile() {
+  std::ifstream readChannels("subscribed_channels.txt");
+  std::string line;
+
+  if (readChannels.is_open() ) {
+    CHANNEL_IDS.clear();
+   while (std::getline(readChannels, line)) {
+     if (!line.empty()) {
+       try {
+         dpp::snowflake id = std::stoull(line);
+         CHANNEL_IDS.push_back(id);
+       } catch (const std::invalid_argument& e) {
+         std::cerr << "Invalid number format in subscribed_channels.txt: " << line << std::endl;
+       } catch (const std::out_of_range& e) {
+         std::cerr << "Number out of range in subscribed_channels.txt: " << line << std::endl;
+       }
+    }
+  }
+  readChannels.close();
+} else {
+  std::cerr << "Could not open 'subscribed_channels.txt' for reading" << std::endl;
+}
+}
+
+void subscribeChannelID(dpp::cluster& bot, const dpp::message_create_t& event, dpp::snowflake channel_id) {
+
+  for (const auto& id : CHANNEL_IDS) {
+    if (id == channel_id) {
+      event.reply("This channel is already subscribed.");
+      return; //already subscribed
+    }
+  }
+  std::ofstream outFile("subscribed_channels.txt", std::ios_base::app);
+  if (outFile.is_open()) {
+    outFile << channel_id << std::endl;
+    outFile.close();
+    CHANNEL_IDS.push_back(channel_id);
+    return;
+  } else {
+    std::cerr << "Could not open subscribed_channels.txt for writing" << std::endl;
+    return;
+  }
+}
+void unSubscribeChannelID(dpp::cluster& bot, const dpp::message_create_t& event, dpp::snowflake channel_id) {
+  std::vector<dpp::snowflake> temp_ids;
+
+
+  std::ifstream inFile("subscribed_channels.txt");
+  std::string line;
+  bool was_found_in_file = false;
+
+  if (inFile.is_open()) {
+    while(std::getline(inFile, line)) {
+      if (!line.empty()) {
+        try {
+          dpp::snowflake id = std::stoull(line);
+          // Add all IDs *except* the one we want to unsubscribe
+          if (id == channel_id) {
+           was_found_in_file = true;
+          } else {
+            temp_ids.push_back(id);
+          }
+        } catch (const std::invalid_argument& e) {
+           std::cerr << "Error: Invalid number format while reading for unsubscribe: '" << line << "' - " << e.what() << std::endl;
+        } catch (const std::out_of_range& e) {
+          std::cerr << "Error: Number out of range while reading for unsubscribe: '" << line << "' - " << e.what() << std::endl;
+        }
+      }
+    }
+    inFile.close();
+  } else {
+    std::cerr << "Error: Could not open 'subscribed_channels.txt' for reading during unsubscribe." << std::endl;
+    // If we can't read the file, we can't safely unsubscribe.
+    // You might want to reply to Discord here too.
+    return;
+  }
+   if (!was_found_in_file) {
+      std::cout << "Channel " << channel_id << " was not found in the subscription list. No action needed." << std::endl;
+      return;
+  }
+
+  std::ofstream outFile("subscribed_channels.txt");
+  if (outFile.is_open()) {
+    for (const auto& id : temp_ids) {
+      outFile << id << std::endl;
+    }
+    outFile.close();
+    readFile();
+    std::cout << "Successfully unsubscribed channel: " << channel_id << std::endl;
+  } else {
+     std::cerr << "Error: Could not open 'subscribed_channels.txt' for writing (rewrite step during unsubscribe)." << std::endl;
+  }
+
+}
 //fun to write received data directly to a file ( for image download)
 size_t WriteImageCallback(void* contents, size_t size, size_t nmemb, void* userp) {
   std::ofstream* file = static_cast<std::ofstream*>(userp);
@@ -123,7 +218,7 @@ void get_image(dpp::cluster& bot, bool isTest, dpp::snowflake channel_id) {
                             dpp::message downloaded_msg(channel_id, "Testing Daily Inspiration");
                             downloaded_msg.add_file("inspirobot_image.jpg", dpp::utility::read_file("inspirobot_image.jpg"));
                             bot.message_create(downloaded_msg);
-                            
+                            return;
                           }
                           dpp::message downloaded_msg(channel_id, "Daily Inspiration");
                           downloaded_msg.add_file("inspirobot_image.jpg", dpp::utility::read_file("inspirobot_image.jpg"));
@@ -150,13 +245,11 @@ void get_image(dpp::cluster& bot, bool isTest, dpp::snowflake channel_id) {
 void on_ready_handler(dpp::cluster &bot, const dpp::ready_t &event) {
     // This function is called when the bot is ready
     std::cout << "Bot is ready! Logged in as " << bot.me.username << std::endl;
-    for (int i = 0; i < CHANNEL_IDS.size(); i++) {
-      
 
-     dpp::message msg (CHANNEL_IDS[i], "Bot is online. Daily Inspiration is scheduled");
+    dpp::message msg (1393059918499676220, "Bot is online. Daily Inspiration is scheduled");
      bot.message_create(msg);
-     get_image(bot, true, CHANNEL_IDS[i]);
-    }
+      std::cout << "Online..." << std::endl;
+
         
        // Optionally, you can send a message to a specific channel
    // dpp::message msg (GENERAL_CHANNEL_ID, "");
@@ -170,6 +263,7 @@ void on_ready_handler(dpp::cluster &bot, const dpp::ready_t &event) {
     global_bosma_scheduler = &main_scheduler;
 
     global_bosma_scheduler->cron("0 12 * * *", [&bot]() {
+        readFile(); //update the list
         for (int i = 0; i < CHANNEL_IDS.size(); i++ ) {
         get_image(bot, false, CHANNEL_IDS[i]);
         }
@@ -195,12 +289,32 @@ int main() {
 
   bot.on_ready([&bot](const dpp::ready_t &event) {
       std::cout << "Bot is ready! Logged in as " << bot.me.username << std::endl;
+      readFile();
       on_ready_handler(bot, event);
   });
   bot.on_message_create([&bot](const dpp::message_create_t& event) {
       if (event.msg.content == "!test_daily") {
-      get_image(bot, true);
-      event.reply("Testing the bot...");
+        readFile();
+        get_image(bot, true, event.msg.channel_id);
+        event.reply("Testing the bot...");
+      }
+      if (event.msg.content == "!subscribe") {
+        //check if user or channel
+        dpp::snowflake channel_id = event.msg.channel_id;
+        subscribeChannelID(bot, event, channel_id);
+        std::string reply_msg = "Channel `#";
+        reply_msg += std::to_string(channel_id);
+
+        reply_msg += ") has been added to Daily Inspiration List!";
+        event.reply(reply_msg);
+      }
+      if (event.msg.content == "!unsubscribe") {
+        dpp::snowflake channel_id = event.msg.channel_id;
+        unSubscribeChannelID(bot, event, channel_id);
+        std::string reply_msg = "Channel `#";
+        reply_msg += std::to_string(channel_id);
+        reply_msg += ") has been removed from Daily Inspiration List!";
+        event.reply(reply_msg);;
       }
       });
 
