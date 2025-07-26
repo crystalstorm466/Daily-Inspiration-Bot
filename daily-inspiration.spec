@@ -1,4 +1,4 @@
-me:       daily-inspiration-bot
+Name:       daily-inspiration-bot
 Version:    1.0.0
 Release:    1%{?dist}
 Summary:    A simple bot to provide daily inspirational quotes
@@ -36,3 +36,4 @@ to manage which channels it posts to.
 %files
 %license LICENSE
 %{_bindir}/discord-bot
+
